@@ -24,6 +24,7 @@ interface ChatCbtPluginSettings {
 	mode: string;
 	model: string;
 	ollamaUrl: string;
+	openRouterUrl: string; // New field for OpenRouter support
 	language: string;
 	prompt: string;
 }
@@ -34,7 +35,7 @@ interface ChatCbtResponseInput {
 }
 
 /** Constants */
-const VALID_MODES = ['openai', 'ollama'];
+const VALID_MODES = ['openai', 'ollama', 'openrouter']; // Added 'openrouter'
 const DEFAULT_LANG = 'English';
 
 const DEFAULT_SETTINGS: ChatCbtPluginSettings = {
@@ -42,6 +43,7 @@ const DEFAULT_SETTINGS: ChatCbtPluginSettings = {
 	mode: 'openai',
 	model: '',
 	ollamaUrl: 'http://0.0.0.0:11434',
+	openRouterUrl: '', // Default empty URL for OpenRouter
 	language: DEFAULT_LANG,
 	prompt: defaultSystemPrompt,
 };
@@ -75,7 +77,7 @@ export default class ChatCbtPlugin extends Plugin {
 
 			menu.addItem((item) =>
 				item
-					.setTitle('Summarize')
+					.setTitle('Summarise')
 					.setIcon('table')
 					.onClick(() => {
 						this.getChatCbtSummary();
@@ -98,8 +100,8 @@ export default class ChatCbtPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: 'summarize',
-			name: 'Summarize',
+			id: 'summarise',
+			name: 'Summarise',
 			editorCallback: (_editor: Editor, _view: MarkdownView) => {
 				this.getChatCbtSummary();
 			},
@@ -133,7 +135,7 @@ export default class ChatCbtPlugin extends Plugin {
 
 		if (!VALID_MODES.includes(this.settings.mode)) {
 			new Notice(
-				`Inavlid mode '${this.settings.mode}' detected. Update in ChatCBT plugin settings and select a valid mode`,
+				`Invalid mode '${this.settings.mode}' detected. Update in ChatCBT plugin settings and select a valid mode`,
 			);
 			return;
 		}
@@ -148,6 +150,11 @@ export default class ChatCbtPlugin extends Plugin {
 			return;
 		}
 
+		if (this.settings.mode === 'openrouter' && !this.settings.openRouterUrl) {
+			new Notice('Missing OpenRouter URL - update in ChatCBT plugin settings');
+			return;
+		}
+
 		const existingText = await this.app.vault.read(activeFile);
 		if (!existingText.trim()) {
 			new Notice('First, share how you are feeling in a note');
@@ -159,7 +166,7 @@ export default class ChatCbtPlugin extends Plugin {
 			.map((i) => i.trim())
 			.map((i) => convertTextToMsg(i));
 
-		// TODO: refactor
+		// Determine selected model
 		const selectedModel = this.settings.model
 			? this.settings.model
 			: this.settings.mode === 'openai'
@@ -184,6 +191,7 @@ export default class ChatCbtPlugin extends Plugin {
 				isSummary,
 				mode: this.settings.mode as Mode,
 				ollamaUrl: this.settings.ollamaUrl,
+				openRouterUrl: this.settings.openRouterUrl, // Pass the OpenRouter URL
 				model: this.settings.model,
 				language: this.settings.language,
 				prompt: this.settings.prompt,
@@ -302,6 +310,22 @@ class MySettingTab extends PluginSettingTab {
 					}),
 			);
 
+		// New setting for OpenRouter mode
+		if (this.plugin.settings.mode === 'openrouter') {
+			new Setting(containerEl)
+				.setName('OpenRouter Server URL')
+				.setDesc('Specify the URL for the OpenRouter endpoint.')
+				.addText((text) =>
+					text
+						.setPlaceholder('ex: https://api.openrouter.com/v1')
+						.setValue(this.plugin.settings.openRouterUrl)
+						.onChange(async (value) => {
+							this.plugin.settings.openRouterUrl = value.trim();
+							await this.plugin.saveSettings();
+						}),
+				);
+		}
+
 		containerEl.createEl('br');
 		containerEl.createEl('br');
 
@@ -346,7 +370,7 @@ class MySettingTab extends PluginSettingTab {
 
 		const promptSetting = new Setting(containerEl)
 			.setName('Edit System Prompt')
-			.setDesc('Customize the prompt that controls how ChatCBT responds to you')
+			.setDesc('Customise the prompt that controls how ChatCBT responds to you')
 			.setClass('chat-cbt-prompt-setting');
 
 		promptSetting.addTextArea((text) => {
@@ -397,7 +421,7 @@ class MySettingTab extends PluginSettingTab {
 		// hide the reset button setting's name/desc elements
 		resetButton.nameEl.remove();
 		resetButton.controlEl.addClass('chat-cbt-reset-button-control');
-		// run this on insitial settings load
+		// run this on initial settings load
 		updateResetButtonVisibility(this.plugin.settings.prompt);
 	}
 
