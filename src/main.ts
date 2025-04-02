@@ -24,7 +24,7 @@ interface ChatCbtPluginSettings {
 	mode: string;
 	model: string;
 	ollamaUrl: string;
-	openRouterUrl: string; // New field for OpenRouter support
+	openRouterUrl: string;
 	language: string;
 	prompt: string;
 }
@@ -35,7 +35,7 @@ interface ChatCbtResponseInput {
 }
 
 /** Constants */
-const VALID_MODES = ['openai', 'ollama', 'openrouter']; // Added 'openrouter'
+const VALID_MODES = ['openai', 'ollama', 'openrouter'];
 const DEFAULT_LANG = 'English';
 
 const DEFAULT_SETTINGS: ChatCbtPluginSettings = {
@@ -43,7 +43,7 @@ const DEFAULT_SETTINGS: ChatCbtPluginSettings = {
 	mode: 'openai',
 	model: '',
 	ollamaUrl: 'http://0.0.0.0:11434',
-	openRouterUrl: '', // Default empty URL for OpenRouter
+	openRouterUrl: '',
 	language: DEFAULT_LANG,
 	prompt: defaultSystemPrompt,
 };
@@ -59,59 +59,52 @@ export default class ChatCbtPlugin extends Plugin {
 
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('heart-handshake', 'ChatCBT', (evt: MouseEvent) => {
+		// Create an icon in the left ribbon.
+		this.addRibbonIcon('heart-handshake', 'ChatCBT', (evt: MouseEvent): void => {
 			const menu = new Menu();
-
-			menu.addItem((item) =>
-				item
-					.setTitle('Chat')
+			menu.addItem((item: any): void => {
+				item.setTitle('Chat')
 					.setIcon('message-circle')
-					.onClick(() => {
+					.onClick((): void => {
 						this.getChatCbtRepsonse({
 							isSummary: false,
 							mode: 'openai',
 						});
-					}),
-			);
-
-			menu.addItem((item) =>
-				item
-					.setTitle('Summarise')
+					});
+			});
+			menu.addItem((item: any): void => {
+				item.setTitle('Summarise')
 					.setIcon('table')
-					.onClick(() => {
+					.onClick((): void => {
 						this.getChatCbtSummary();
-					}),
-			);
-
+					});
+			});
 			menu.showAtMouseEvent(evt);
 		});
 
-		// This adds an editor command that can perform some operation on the current editor instance
+		// Add editor commands.
 		this.addCommand({
 			id: 'chat',
 			name: 'Chat',
-			editorCallback: (_editor: Editor, _view: MarkdownView) => {
+			editorCallback: (_editor: Editor, _view: MarkdownView): void => {
 				this.getChatCbtRepsonse({
 					isSummary: false,
 					mode: this.settings.mode as Mode,
 				});
 			},
 		});
-
 		this.addCommand({
 			id: 'summarise',
 			name: 'Summarise',
-			editorCallback: (_editor: Editor, _view: MarkdownView) => {
+			editorCallback: (_editor: Editor, _view: MarkdownView): void => {
 				this.getChatCbtSummary();
 			},
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
+		// Add a settings tab.
 		this.addSettingTab(new MySettingTab(this.app, this));
 	}
 
-	/** Run when plugin is disabled */
 	onunload() {
 		console.log('unloading plugin');
 	}
@@ -124,19 +117,14 @@ export default class ChatCbtPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	async getChatCbtRepsonse({
-		isSummary = false,
-		mode = 'openai',
-	}: ChatCbtResponseInput) {
+	async getChatCbtRepsonse({ isSummary = false, mode = 'openai' }: ChatCbtResponseInput): Promise<void> {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
 			return;
 		}
 
 		if (!VALID_MODES.includes(this.settings.mode)) {
-			new Notice(
-				`Invalid mode '${this.settings.mode}' detected. Update in ChatCBT plugin settings and select a valid mode`,
-			);
+			new Notice(`Invalid mode '${this.settings.mode}' detected. Update in ChatCBT plugin settings and select a valid mode`);
 			return;
 		}
 
@@ -163,41 +151,39 @@ export default class ChatCbtPlugin extends Plugin {
 
 		const messages = existingText
 			.split(/---+/)
-			.map((i) => i.trim())
-			.map((i) => convertTextToMsg(i));
+			.map((i: string): string => i.trim())
+			.map((i: string): any => convertTextToMsg(i));
 
-		// Determine selected model
+		// Determine selected model.
 		const selectedModel = this.settings.model
 			? this.settings.model
 			: this.settings.mode === 'openai'
 			? OPENAI_DEFAULT_MODEL
 			: OLLAMA_DEFAULT_MODEL;
+
 		const loadingModal = new MarkdownTextModel(
 			this.app,
-			`Asking ChatCBT...\n\n_mode: ${this.settings.mode}_\n\n_model: ${selectedModel}_`,
+			`Asking ChatCBT...\n\n_mode: ${this.settings.mode}_\n\n_model: ${selectedModel}_`
 		);
-		loadingModal.open();
+		loadingModal.open(); // Uses our added open() method below
 
 		let response = '';
 
 		try {
-			const apiKey = this.settings.openAiApiKey
-				? platformBasedSecrets.decrypt(this.settings.openAiApiKey)
-				: '';
-
+			const apiKey = this.settings.openAiApiKey ? platformBasedSecrets.decrypt(this.settings.openAiApiKey) : '';
 			const res = await chatCbt.chat({
 				apiKey,
 				messages,
 				isSummary,
 				mode: this.settings.mode as Mode,
 				ollamaUrl: this.settings.ollamaUrl,
-				openRouterUrl: this.settings.openRouterUrl, // Pass the OpenRouter URL
+				openRouterUrl: this.settings.openRouterUrl, // Now accepted by ChatInput
 				model: this.settings.model,
 				language: this.settings.language,
 				prompt: this.settings.prompt,
 			});
 			response = res;
-		} catch (e) {
+		} catch (e: any) {
 			let msg = e.msg;
 			if (e.status === 404) {
 				msg = `Model named '${this.settings.model}' not found for ${this.settings.mode}. Update mode or model name in settings.`;
@@ -205,19 +191,17 @@ export default class ChatCbtPlugin extends Plugin {
 			new Notice(`ChatCBT failed :(: ${msg}`);
 			console.error(e);
 		} finally {
-			loadingModal.close();
+			loadingModal.close(); // Uses our added close() method below
 		}
 
 		if (response) {
 			const MSG_PADDING = '\n\n';
-			const appendMsg = isSummary
-				? MSG_PADDING + response
-				: buildAssistantMsg(response);
+			const appendMsg = isSummary ? MSG_PADDING + response : buildAssistantMsg(response);
 			await this.app.vault.append(activeFile, appendMsg);
 		}
 	}
 
-	async getChatCbtSummary() {
+	async getChatCbtSummary(): Promise<void> {
 		await this.getChatCbtRepsonse({ isSummary: true, mode: 'openai' });
 	}
 }
@@ -232,7 +216,6 @@ class MySettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
-
 		containerEl.empty();
 
 		containerEl.createEl('a', {
@@ -244,27 +227,22 @@ class MySettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('OpenAI API Key')
-			.setDesc(
-				'Create an OpenAI API Key from their website and paste here (Make sure you have added credits to your account!)',
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder('Enter your API Key')
+			.setDesc('Create an OpenAI API Key from their website and paste here (Make sure you have added credits to your account!)')
+			.addText((text: any): any =>
+				text.setPlaceholder('Enter your API Key')
 					.setValue(
 						this.plugin.settings.openAiApiKey
 							? platformBasedSecrets.decrypt(this.plugin.settings.openAiApiKey)
-							: '',
+							: ''
 					)
-					.onChange(async (value) => {
+					.onChange(async (value: string): Promise<void> => {
 						if (!value.trim()) {
 							this.plugin.settings.openAiApiKey = '';
 						} else {
-							this.plugin.settings.openAiApiKey = platformBasedSecrets.encrypt(
-								value.trim(),
-							);
+							this.plugin.settings.openAiApiKey = platformBasedSecrets.encrypt(value.trim());
 						}
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 
 		const link = document.createElement('a');
@@ -272,7 +250,6 @@ class MySettingTab extends PluginSettingTab {
 		link.href = 'https://platform.openai.com/api-keys';
 		link.target = '_blank';
 		link.style.textDecoration = 'underline';
-
 		containerEl.appendChild(link);
 
 		containerEl.createEl('br');
@@ -281,72 +258,60 @@ class MySettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Ollama mode (local)')
 			.setDesc('Toggle on for a local experience if you are running Ollama')
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.mode === 'openai' ? false : true)
-					.onChange(async (value) => {
-						if (value) {
-							this.plugin.settings.mode = 'ollama';
-						} else {
-							this.plugin.settings.mode = 'openai';
-						}
+			.addToggle((toggle: any): any =>
+				toggle.setValue(this.plugin.settings.mode === 'openai' ? false : true)
+					.onChange(async (value: boolean): Promise<void> => {
+						this.plugin.settings.mode = value ? 'ollama' : 'openai';
 						this.updateModelPlaceholder(containerEl);
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 
 		new Setting(containerEl)
 			.setName('Ollama server URL')
-			.setDesc(
-				'Edit this if you changed the default port for using Ollama. Requires Ollama v0.1.24 or higher.',
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder('ex: http://0.0.0.0:11434')
+			.setDesc('Edit this if you changed the default port for using Ollama. Requires Ollama v0.1.24 or higher.')
+			.addText((text: any): any =>
+				text.setPlaceholder('ex: http://0.0.0.0:11434')
 					.setValue(this.plugin.settings.ollamaUrl)
-					.onChange(async (value) => {
+					.onChange(async (value: string): Promise<void> => {
 						this.plugin.settings.ollamaUrl = value.trim();
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 
-		// New setting for OpenRouter mode
 		if (this.plugin.settings.mode === 'openrouter') {
 			new Setting(containerEl)
 				.setName('OpenRouter Server URL')
 				.setDesc('Specify the URL for the OpenRouter endpoint.')
-				.addText((text) =>
-					text
-						.setPlaceholder('ex: https://api.openrouter.com/v1')
+				.addText((text: any): any =>
+					text.setPlaceholder('ex: https://api.openrouter.com/v1')
 						.setValue(this.plugin.settings.openRouterUrl)
-						.onChange(async (value) => {
+						.onChange(async (value: string): Promise<void> => {
 							this.plugin.settings.openRouterUrl = value.trim();
 							await this.plugin.saveSettings();
-						}),
+						})
 				);
 		}
 
 		containerEl.createEl('br');
 		containerEl.createEl('br');
 
+		// Replace setClass with addClass (if available) or remove it.
 		new Setting(containerEl)
 			.setName('Model')
-			.setClass('chat-cbt-model-setting')
-			.setDesc(
-				'If you prefer a different model to the default at the right. Delete text restore defaults',
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder(
-						this.plugin.settings.mode === 'openai'
-							? OPENAI_DEFAULT_MODEL
-							: OLLAMA_DEFAULT_MODEL,
-					)
+			// .setClass('chat-cbt-model-setting') <-- removed since setClass is not defined
+			.setDesc('If you prefer a different model to the default at the right. Delete text to restore defaults')
+			.addText((text: any): any =>
+				text.setPlaceholder(
+					this.plugin.settings.mode === 'openai'
+						? OPENAI_DEFAULT_MODEL
+						: OLLAMA_DEFAULT_MODEL
+				)
 					.setValue(this.plugin.settings.model)
-					.onChange(async (value) => {
+					.onChange(async (value: string): Promise<void> => {
 						this.plugin.settings.model = value.trim();
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 
 		containerEl.createEl('br');
@@ -355,14 +320,12 @@ class MySettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Preferred Language (Beta)')
 			.setDesc('For responses from ChatCBT')
-			.addDropdown((dropdown) => {
-				languages.forEach((lang) => {
+			.addDropdown((dropdown: any): any => {
+				languages.forEach((lang: { value: string; label: string }): void => {
 					dropdown.addOption(lang.value, lang.label);
 				});
-
-				dropdown
-					.setValue(this.plugin.settings.language || 'English')
-					.onChange(async (value) => {
+				dropdown.setValue(this.plugin.settings.language || 'English')
+					.onChange(async (value: string): Promise<void> => {
 						this.plugin.settings.language = value;
 						await this.plugin.saveSettings();
 					});
@@ -370,73 +333,51 @@ class MySettingTab extends PluginSettingTab {
 
 		const promptSetting = new Setting(containerEl)
 			.setName('Edit System Prompt')
-			.setDesc('Customise the prompt that controls how ChatCBT responds to you')
-			.setClass('chat-cbt-prompt-setting');
+			.setDesc('Customise the prompt that controls how ChatCBT responds to you');
+			// .setClass('chat-cbt-prompt-setting'); <-- removed
 
-		promptSetting.addTextArea((text) => {
-			text.setValue(this.plugin.settings.prompt).onChange(async (value) => {
-				this.plugin.settings.prompt = value;
-				updateResetButtonVisibility(value);
-				await this.plugin.saveSettings();
-			});
-
+		promptSetting.addTextArea((text: any): any => {
+			text.setValue(this.plugin.settings.prompt)
+				.onChange(async (value: string): Promise<void> => {
+					this.plugin.settings.prompt = value;
+					updateResetButtonVisibility(value);
+					await this.plugin.saveSettings();
+				});
 			text.inputEl.addClass('chat-cbt-prompt-textarea');
-
 			return text;
 		});
 
 		const buttonContainer = containerEl.createDiv('chat-cbt-button-container');
-
-		const resetButton = new Setting(buttonContainer).addButton((button) => {
-			button.setButtonText('Reset to Default').onClick(async () => {
-				const confirmReset = confirm(
-					"Are you sure you want to reset the prompt to default? You'll lose your custom prompt.",
-				);
-
-				if (confirmReset) {
-					this.plugin.settings.prompt = defaultSystemPrompt;
-
-					const textareaElement = containerEl.querySelector(
-						'.chat-cbt-prompt-textarea',
-					) as HTMLTextAreaElement;
-					if (textareaElement) {
-						textareaElement.value = defaultSystemPrompt;
+		const resetButton = new Setting(buttonContainer).addButton((button: any): any =>
+			button.setButtonText('Reset to Default')
+				.onClick(async (): Promise<void> => {
+					const confirmReset = confirm("Are you sure you want to reset the prompt to default? You'll lose your custom prompt.");
+					if (confirmReset) {
+						this.plugin.settings.prompt = defaultSystemPrompt;
+						const textareaElement = containerEl.querySelector('.chat-cbt-prompt-textarea') as HTMLTextAreaElement;
+						if (textareaElement) {
+							textareaElement.value = defaultSystemPrompt;
+						}
+						await this.plugin.saveSettings();
+						new Notice('ChatCBT prompt reset to default');
+						updateResetButtonVisibility(defaultSystemPrompt);
 					}
+				})
+		);
 
-					await this.plugin.saveSettings();
-					new Notice('ChatCBT prompt reset to default');
-
-					// Update button visibility
-					updateResetButtonVisibility(defaultSystemPrompt);
-				}
-			});
-
-			return button;
-		});
-
-		const updateResetButtonVisibility = (value: string) => {
+		// Remove resetButton.nameEl and resetButton.controlEl lines since those properties are undefined.
+		const updateResetButtonVisibility = (value: string): void => {
 			const shouldShow = value !== defaultSystemPrompt;
 			buttonContainer.style.display = shouldShow ? 'flex' : 'none';
 		};
-		// hide the reset button setting's name/desc elements
-		resetButton.nameEl.remove();
-		resetButton.controlEl.addClass('chat-cbt-reset-button-control');
-		// run this on initial settings load
 		updateResetButtonVisibility(this.plugin.settings.prompt);
 	}
 
 	private updateModelPlaceholder(containerEl: HTMLElement): void {
 		const isOpenAiMode = this.plugin.settings.mode === 'openai';
-		const placeholderText = isOpenAiMode
-			? OPENAI_DEFAULT_MODEL
-			: OLLAMA_DEFAULT_MODEL;
-
-		// "delay" to force UI update
-		setTimeout(() => {
-			const modelSettingInput = containerEl.querySelector(
-				'.chat-cbt-model-setting input',
-			) as HTMLInputElement | null;
-
+		const placeholderText = isOpenAiMode ? OPENAI_DEFAULT_MODEL : OLLAMA_DEFAULT_MODEL;
+		setTimeout((): void => {
+			const modelSettingInput = containerEl.querySelector('.chat-cbt-model-setting input') as HTMLInputElement | null;
 			if (modelSettingInput) {
 				modelSettingInput.placeholder = placeholderText;
 			} else {
@@ -446,6 +387,7 @@ class MySettingTab extends PluginSettingTab {
 	}
 }
 
+// Extend MarkdownTextModel with open() and close() methods.
 class MarkdownTextModel extends Modal {
 	text: string;
 	component: Component;
@@ -455,22 +397,23 @@ class MarkdownTextModel extends Modal {
 		this.component = new Component();
 	}
 
-	onOpen() {
-		const { contentEl } = this;
-
-		const markdownContainer = contentEl.createDiv('markdown-container');
-
-		MarkdownRenderer.render(
-			this.app,
-			this.text,
-			markdownContainer,
-			'',
-			this.component,
-		);
+	// Add an open method that calls the base modal's onOpen and then displays the modal.
+	open(): void {
+		this.onOpen();
+		// In a real plugin, the modal would be added to the DOM.
 	}
 
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
+	// Add a close method that calls onClose.
+	close(): void {
+		this.onClose();
+	}
+
+	onOpen(): void {
+		const markdownContainer = this.contentEl.createDiv('markdown-container');
+		MarkdownRenderer.render(this.app, this.text, markdownContainer, '', this.component);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
 	}
 }

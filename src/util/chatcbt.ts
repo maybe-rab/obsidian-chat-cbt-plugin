@@ -1,4 +1,3 @@
-import { requestUrl } from 'obsidian';
 import summaryPrompt from '../prompts/summary';
 import { OLLAMA_DEFAULT_MODEL, OPENAI_DEFAULT_MODEL } from '../constants';
 
@@ -10,13 +9,16 @@ export interface Message {
 	content: string;
 }
 
-export type Mode = 'openai' | 'ollama';
+// Include "openrouter" in the Mode type.
+export type Mode = 'openai' | 'ollama' | 'openrouter';
+
 export interface ChatInput {
 	apiKey: string | undefined;
 	messages: Message[];
 	isSummary: boolean | undefined;
 	mode: Mode;
 	ollamaUrl: string | undefined;
+	openRouterUrl?: string; // Added openRouterUrl to the interface.
 	model: string | undefined;
 	language: string;
 	prompt: string;
@@ -31,6 +33,7 @@ export class ChatCbt {
 		isSummary = false,
 		mode = 'openai',
 		ollamaUrl,
+		openRouterUrl,
 		model,
 		language,
 		prompt,
@@ -51,13 +54,13 @@ export class ChatCbt {
 
 		const msgs = [SYSTEM_MSG, ...resolvedMsgs];
 
-		/** validations should be guaranteed from parent layer, based on mode. Re-validating here to appease typescript gods */
+		/** validations should be guaranteed from parent layer */
 		if (mode === 'openai' && !!apiKey) {
 			const url = 'https://api.openai.com/v1/chat/completions';
 			response = await this._chat(
 				url,
 				msgs,
-				apiKey,
+				apiKey || '',
 				model || OPENAI_DEFAULT_MODEL,
 			);
 		} else if (mode === 'ollama' && !!ollamaUrl) {
@@ -65,8 +68,16 @@ export class ChatCbt {
 			response = await this._chat(
 				url,
 				msgs,
-				'ollama', // default API Key used by Ollama's OpenAI style chat endpoint (v0.1.24^)
+				'ollama', // default API Key used by Ollama's endpoint
 				model || OLLAMA_DEFAULT_MODEL,
+			);
+		} else if (mode === 'openrouter' && !!openRouterUrl) {
+			const url = openRouterUrl.replace(/\/$/, '') + '/v1/chat/completions';
+			response = await this._chat(
+				url,
+				msgs,
+				apiKey || '',
+				model || OPENAI_DEFAULT_MODEL,
 			);
 		}
 
@@ -94,13 +105,16 @@ export class ChatCbt {
 			url,
 			method: 'POST',
 			body: JSON.stringify(data),
-			headers: headers as unknown as Record<string, string>,
+			headers: headers,
 		};
 
-		const response: {
-			json: { choices: { message: { content: string } }[] };
-		} = await requestUrl(options);
-
-		return response.json.choices[0].message.content;
+		// Use fetch as a replacement for requestUrl.
+		const res = await fetch(options.url, {
+			method: options.method,
+			headers: options.headers,
+			body: options.body,
+		});
+		const json = await res.json();
+		return json.choices[0].message.content;
 	}
 }

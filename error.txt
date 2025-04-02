@@ -1,0 +1,47 @@
+
+> obsidian-chat-cbt-plugin@2.0.0 build
+> tsc -noEmit -skipLibCheck && node esbuild.config.mjs production
+
+src/main.ts(13,8): error TS2307: Cannot find module 'obsidian' or its corresponding type declarations.
+src/main.ts(57,8): error TS2354: This syntax requires an imported helper but module 'tslib' cannot be found.
+src/main.ts(63,8): error TS2339: Property 'addRibbonIcon' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(66,18): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/main.ts(78,18): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/main.ts(91,8): error TS2339: Property 'addCommand' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(102,8): error TS2339: Property 'addCommand' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(111,8): error TS2339: Property 'addSettingTab' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(111,44): error TS2339: Property 'app' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(120,66): error TS2339: Property 'loadData' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(124,14): error TS2339: Property 'saveData' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(131,27): error TS2339: Property 'app' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(158,35): error TS2339: Property 'app' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(166,10): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/main.ts(167,10): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/main.ts(176,9): error TS2339: Property 'app' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(179,16): error TS2339: Property 'open' does not exist on type 'MarkdownTextModel'.
+src/main.ts(194,5): error TS2353: Object literal may only specify known properties, and 'openRouterUrl' does not exist in type 'ChatInput'.
+src/main.ts(208,17): error TS2551: Property 'close' does not exist on type 'MarkdownTextModel'. Did you mean 'onClose'?
+src/main.ts(216,15): error TS2339: Property 'app' does not exist on type 'ChatCbtPlugin'.
+src/main.ts(234,11): error TS2339: Property 'containerEl' does not exist on type 'MySettingTab'.
+src/main.ts(250,14): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/main.ts(258,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/main.ts(284,16): error TS7006: Parameter 'toggle' implicitly has an 'any' type.
+src/main.ts(287,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/main.ts(303,14): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/main.ts(307,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/main.ts(318,15): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/main.ts(322,24): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/main.ts(338,14): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/main.ts(346,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/main.ts(358,18): error TS7006: Parameter 'dropdown' implicitly has an 'any' type.
+src/main.ts(365,23): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/main.ts(376,30): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/main.ts(377,63): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/main.ts(390,63): error TS7006: Parameter 'button' implicitly has an 'any' type.
+src/main.ts(459,11): error TS2339: Property 'contentEl' does not exist on type 'MarkdownTextModel'.
+src/main.ts(464,9): error TS2339: Property 'app' does not exist on type 'MarkdownTextModel'.
+src/main.ts(473,11): error TS2339: Property 'contentEl' does not exist on type 'MarkdownTextModel'.
+src/util/chatcbt.ts(1,28): error TS2307: Cannot find module 'obsidian' or its corresponding type declarations.
+src/util/chatcbt.ts(28,8): error TS2354: This syntax requires an imported helper but module 'tslib' cannot be found.
+src/util/crypt.ts(1,20): error TS2307: Cannot find module 'cryptr' or its corresponding type declarations.
+src/util/platformBasedSecrets.ts(1,26): error TS2307: Cannot find module 'obsidian' or its corresponding type declarations.
